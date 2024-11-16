@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	api "music-recommender/api"
+	"music-recommender/db"
 
 	"github.com/rs/zerolog/log"
 )
@@ -10,6 +11,8 @@ import (
 func main() {
 	fmt.Println("Hello World!")
 	log.Info().Msg("Logging Info")
+
+	db.NewSQLiteStorageFoo()
 
 	var server *api.APIServer = api.CreateMainServer(":8080", nil) //Pointer to the API server struct
 	if err := server.Run(); err != nil {
