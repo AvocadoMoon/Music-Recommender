@@ -26,4 +26,9 @@ func WriteError(){
 }
 
 
+func ExecuteDB(){
+	
+}
+
+
 

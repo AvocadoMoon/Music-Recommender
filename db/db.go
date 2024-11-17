@@ -45,14 +45,46 @@ const createRankingTable string = `CREATE TABLE IF NOT EXISTS ranking (
 )`
 
 
-func NewSQLiteStorage(){
+type MusicDB struct {
+	db *sql.DB
+}
+
+
+func CreateSQLiteStorage() *MusicDB{
 	db, err := sql.Open("sqlite3", "./foo.db")
 	if err != nil {
 		log.Fatal().Msg(err.Error())
 	}
 	db.Exec(createMusicTable)
 	db.Exec(createRankingTable)
+	mdb := MusicDB{db}
+	return &mdb
 }
+
+func (mdb MusicDB) createNewCurator(musicEntry MusicEntry){
+
+}
+
+func (mdb MusicDB) insertNewSong(musicEntry MusicEntry){
+
+}
+
+func (mdb MusicDB) getTodaysRanking(){
+
+}
+
+func (mdb MusicDB) updateTodaysRanking(){
+	
+}
+
+func (mdb MusicDB) getTodaysMusic(){
+
+}
+
+func (mdb MusicDB) getCalendarsMusic(){
+
+}
+
 
 
 func NewSQLiteStorageFoo() {
