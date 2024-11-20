@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"music-recommender/services/daily-user"
 	"net/http"
 	"music-recommender/services/curator"
@@ -25,11 +24,11 @@ func (a APIServer) Run() error {
 	router := mux.NewRouter()
 	subrouter := router.PathPrefix("/api/v1").Subrouter()
 	
-	anonymous_user_handler := daily_user.NewHandler()
+	anonymous_user_handler := daily_user.NewHandler(a.db)
 	anonymous_user_handler.RegisterAnonymousUserRoutes(subrouter)
 
-	curator_handler := music_curator.NewHandler()
+	curator_handler := music_curator.NewHandler(a.db)
 	curator_handler.RegisterCuratorRoutes(subrouter)
 
-	return http.ListenAndServe(a.addr, router)
+	return http.ListenAndServe(a.addr, subrouter)
 }

@@ -2,14 +2,11 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
+	"music-recommender/types"
+
 	_ "github.com/mattn/go-sqlite3" // Used to import the side effects of a package. Allows for SQlit3 Driver to be known
 	"github.com/rs/zerolog/log"
 )
-
-type fooStruct struct {
-	id string
-}
 
 
 // Good enough table SCHEMA for now
@@ -23,14 +20,16 @@ Useful in case a special day is made where previous songs can be ranked again
 */
 const createMusicTable string = `CREATE TABLE IF NOT EXISTS music (
 	id INTEGER NOT NULL PRIMARY KEY,
-	insert_date DATETIME NOT NULL,
+	insert_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	name TEXT,
 	songURL TEXT,
 	genre TEXT,
 	subgenre TEXT,
 	description TEXT,
-	submitterID INTEGER FOREIGN KEY,
+	submitterID,
 	rank_id TEXT
-	num_ranks INTEGER
+	num_ranks INTEGER,
+	FOREIGN KEY (submitterID) REFERENCES users(id)
 )`
 /*
 Ranking can include multiple songs that have been ranked, thus it will be
@@ -45,64 +44,81 @@ const createRankingTable string = `CREATE TABLE IF NOT EXISTS ranking (
 )`
 
 
+/*
+Everyday take the total of yesterdays music choices (if there is any)
+Sum up the choices and put them in the ranking table as appropriate
+Clean the table, and place the new songs which will be ranked within the table 
+*/
+const createTodaysRankingTable string = `CREATE TABLE IF NOT EXISTS todaysRanking (
+	songID INTEGER,
+	name TEXT,
+	num_votes INTEGER,
+	FOREIGN KEY (songID) REFERENCES music(id)
+)`
+
+const createUserTable string = `CREATE TABLE IF NOT EXISTS users (
+	id INTEGER NOT NULL PRIMARY KEY,
+)`
+
+
 type MusicDB struct {
 	db *sql.DB
 }
 
 
 func CreateSQLiteStorage() *MusicDB{
-	db, err := sql.Open("sqlite3", "./foo.db")
+	db, err := sql.Open("sqlite3", "./music.db")
 	if err != nil {
 		log.Fatal().Msg(err.Error())
 	}
-	db.Exec(createMusicTable)
+	_, err = db.Exec(createUserTable)
+	if err != nil {
+		log.Fatal().AnErr("Create user table fail", err)
+	}
+	_, err = db.Exec(createMusicTable)
+	if err != nil {
+		log.Fatal().Msg(err.Error())
+	}
 	db.Exec(createRankingTable)
+	db.Exec(createTodaysRankingTable)
 	mdb := MusicDB{db}
 	return &mdb
 }
 
-func (mdb MusicDB) createNewCurator(musicEntry MusicEntry){
-
+func (mdb MusicDB) CreateNewCurator(musicEntry MusicEntry) error{
+	return nil
 }
 
-func (mdb MusicDB) insertNewSong(musicEntry MusicEntry){
-
+func (mdb MusicDB) InsertNewSong(musicEntry *types.SubmitSong){
+	const executeString = `INSERT INTO music(name, songURL, genre, subgenre, description, submitterID) 
+	VALUES(?, ?, ?, ?, ?, ?)`
+	_, err := mdb.db.Exec(executeString, musicEntry.Name, musicEntry.SongURL, 
+		musicEntry.Genre, musicEntry.Subgenre, musicEntry.Description, 20)
+	handleMusicDBError(err)
 }
 
-func (mdb MusicDB) getTodaysRanking(){
-
+func (mdb MusicDB) GetTodaysRanking() *types.TodaysRankingPayload{
+	res := mdb.db.QueryRow("SELECT * FROM todaysRanking WHERE insert_date = ?")
+	res.Scan()
+	return &types.TodaysRankingPayload{}
 }
 
-func (mdb MusicDB) updateTodaysRanking(){
-	
+func (mdb MusicDB) UpdateTodaysRanking(submitVote types.SubmitVotePayload){
+	_, err := mdb.db.Exec("UPDATE todaysRanking SET num_votes = num_votes + 1 WHERE name = ?", 
+							submitVote.SongName)
+	handleMusicDBError(err)
 }
 
-func (mdb MusicDB) getTodaysMusic(){
-
+func (mdb MusicDB) GetTodaysMusic() *types.TodaysMusicPayload{
+	return &types.TodaysMusicPayload{}
 }
 
-func (mdb MusicDB) getCalendarsMusic(){
-
+func (mdb MusicDB) GetCalendarsMusic() *types.CalendarPayload{
+	return &types.CalendarPayload{}
 }
 
-
-
-func NewSQLiteStorageFoo() {
-	db, err := sql.Open("sqlite3", "./foo.db")
-	if err != nil {
-		log.Fatal().Msg(err.Error())
+func handleMusicDBError(err error){
+	if err != nil{
+		log.Error().AnErr("musicDB", err)
 	}
-	db.Exec(`CREATE TABLE IF NOT EXISTS foo(
-		fid INTEGER
-	)`)
-	fd, err2 := db.Exec("INSERT INTO foo VALUES(?);", 'Q')
-	if err2 != nil {
-		log.Error().Msg(err2.Error())
-	}
-	fd.LastInsertId()
-	var ex1 *sql.Row = db.QueryRow("SELECT * FROM foo WHERE fid=?", 'Q')
-	var result fooStruct
-	errr := ex1.Scan(&result.id)
-	fmt.Println(errr)
-	fmt.Println(result)
 }

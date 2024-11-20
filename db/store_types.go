@@ -2,6 +2,7 @@ package db
 
 type MusicEntry struct {
 	id int
+	name string
 	insert_date string
 	songURL string
 	genre string
