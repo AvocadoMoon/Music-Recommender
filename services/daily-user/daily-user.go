@@ -1,7 +1,6 @@
 package daily_user
 
 import (
-	"errors"
 	"music-recommender/db"
 	"music-recommender/types"
 	"music-recommender/utils"
@@ -34,30 +33,24 @@ func (h *Handler) submitAVote(w http.ResponseWriter, r *http.Request){
 	var vote types.SubmitVotePayload
 	err := utils.DecodeJSONBody(w, r, vote)
 	if err != nil{
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr){
-			http.Error(w, mr.Msg, mr.Status)
-		} else {
-			log.Error().Msg(err.Error())
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		log.Error().Msg(err.Error())
 		return
 	}
 	h.musicDB.UpdateTodaysRanking(vote)
 	var todaysRanking *types.TodaysRankingPayload = h.musicDB.GetTodaysRanking()
-	utils.WriteJSON(w, 200, todaysRanking)
+	utils.WriteJSON(w, todaysRanking, 200)
 }
 
 func (h *Handler) handleGettingTodaysMusic(w http.ResponseWriter, r *http.Request){
 	// get todays music from the DB and return the information
 	todaysMusic := h.musicDB.GetTodaysMusic()
-	utils.WriteJSON(w, 200, todaysMusic)
+	utils.WriteJSON(w, todaysMusic, 200)
 }
 
 func (h *Handler) handleGettingCalendar(w http.ResponseWriter, r *http.Request){
 	// get past music choices with their dates
 	calendar := h.musicDB.GetCalendarsMusic()
-	utils.WriteJSON(w, 200, calendar)
+	utils.WriteJSON(w, calendar, 200)
 }
 
 

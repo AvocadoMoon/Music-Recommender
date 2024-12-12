@@ -1,13 +1,13 @@
 package music_curator
 
 import (
-	"errors"
 	"music-recommender/db"
 	"music-recommender/types"
 	"music-recommender/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 )
 
 type Handler struct{
@@ -33,10 +33,8 @@ func (h *Handler) submitMusic(w http.ResponseWriter, r *http.Request){
 	// submit music to be chosen to the data base.
 	var submitSong types.SubmitSong
 	err := utils.DecodeJSONBody(w, r, &submitSong)
-	var mal *utils.MalformedRequest
 	if err != nil{
-		errors.As(err, &mal)
-		http.Error(w, mal.Msg, mal.Status)
+		log.Error().Msg(err.Error())
 		return
 	}
 	h.musicDB.InsertNewSong(&submitSong)
